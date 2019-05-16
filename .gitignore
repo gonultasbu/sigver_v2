@@ -1,0 +1,10 @@
+!*.py
+!*.ipynb
+!.gitignore
+!/datasets/*.py
+!/datasets/*.ipynb
+!/featurelearning/*.py
+!/featurelearning/*.ipynb
+!/preprocessing/*.py
+!/preprocessing/*.ipynb
+
