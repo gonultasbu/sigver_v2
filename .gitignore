@@ -1,3 +1,4 @@
+*
 !*.py
 !*.ipynb
 !.gitignore
@@ -8,3 +9,5 @@
 !/preprocessing/*.py
 !/preprocessing/*.ipynb
 
+saved_models/
+.ipynb_checkpoints/
