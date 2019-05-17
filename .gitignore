@@ -9,3 +9,4 @@ saved_models/signet.pth
 featurelearning/models/__pycache__/signet.cpython-37.pyc
 preprocessing/__pycache__/__init__.cpython-37.pyc
 saved_models/gpds4k_net.zip
+*.pth
