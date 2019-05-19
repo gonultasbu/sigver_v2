@@ -26,7 +26,6 @@ class GPDSDataset(IterableDataset):
 
     @property
     def maxsize(self):
-        """ Edit this according to the find max size result""" 
         return 1338, 2973
 
     def get_user_list(self):
