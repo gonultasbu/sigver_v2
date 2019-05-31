@@ -2,9 +2,6 @@
 
 This repository is a spinoff from https://github.com/luizgh/sigver with some architectural tweaks and domain adaptations.
 
-[1] Hafemann, Luiz G., Robert Sabourin, and Luiz S. Oliveira. "Learning Features for Offline Handwritten Signature Verification using Deep Convolutional Neural Networks" http://dx.doi.org/10.1016/j.patcog.2017.05.012 ([preprint](https://arxiv.org/abs/1705.05787))
-
-
 # Usage
 
 ## Data preprocessing
