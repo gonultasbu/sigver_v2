@@ -11,3 +11,5 @@ preprocessing/__pycache__/__init__.cpython-37.pyc
 saved_models/gpds4k_net.zip
 *.pth
 npz/
+featurelearning/__pycache__/
+wd/versions/

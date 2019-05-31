@@ -9,6 +9,8 @@ This repository is a spinoff from https://github.com/luizgh/sigver
 
 ## Data preprocessing
 
+The workflow is as follows: images > apply data preprocessing > .npz files > apply CNN feature extractions > .csv features > apply writer-dependent classifiers > scores. 
+
 The functions in this package expect training data to be provided in a single .npz file, with the following components:
 
 * ```x```: Signature images (numpy array of size N x 1 x H x W)
@@ -40,50 +42,16 @@ python -m sigver.featurelearning.train --model signet --dataset-path  <data.npz>
 --model signet --epochs 60 --logdir signet  
 ```
 
-Training SigNet-F with lambda=0.95:
+Training SigNet-F with lambda=0.95 with L1 loss type:
 
 ```
 python -m sigver.featurelearning.train --model signet --dataset-path  <data.npz> --users [first last]\ 
---model signet --epochs 60 --forg --lamb 0.95 --logdir signet_f_lamb0.95  
+--model signet --epochs 60 --forg --lamb 0.95 --logdir signet_f_lamb0.95 --loss-type L1  
 ```
 
 For checking all command-line options, use ```python -m sigver.featurelearning.train --help```. 
 In particular, the option ```--visdom-port``` allows real-time monitoring using [visdom](https://github.com/facebookresearch/visdom) (start the visdom
 server with ```python -m visdom.server -port <port>```).   
-
-## Training WD classifiers and evaluating the result
-
-For training and testing the WD classifiers, use the ```sigver.wd.test``` script. Example:
-
-```bash
-python -m sigver.wd.test -m signet --model-path <path/to/trained_model> \
-    --data-path <path/to/data> --save-path <path/to/save> \
-    --exp-users 0 300 --dev-users 300 881 --gen-for-train 12
-```
-
-Where trained_model is a .pth file (trained with the script above, or pre-trained - see the section below).
-This script will split the dataset into train/test, train WD classifiers and evaluate then on the test set. This
-is performed for K random splits (default 10). The script saves a pickle file containing a list, where each element is the result 
-of one random split. Each item contains a dictionary with:
-
-* 'all_metrics': a dictionary containing:
-  * 'FRR': false rejection rate
-  * 'FAR_random': false acceptance rate for random forgeries
-  * 'FAR_skilled': false acceptance rate for skilled forgeries
-  * 'mean_AUC': mean Area Under the Curve (average of AUC for each user)
-  * 'EER': Equal Error Rate using a global threshold
-  * 'EER_userthresholds': Equal Error Rate using user-specific thresholds
-  * 'auc_list': the list of AUCs (one per user)
-  * 'global_threshold': the optimum global threshold (used in EER)
-* 'predictions': a dictionary containing the predictions for all images on the test set:
-  * 'genuinePreds': Predictions to genuine signatures
-  * 'randomPreds': Predictions to random forgeries
-  * 'skilledPreds': Predictions to skilled forgeries
-
-
-The example above train WD classifiers for the exploitation set (users 0-300) using a development
-set (users 300-881), with 12 genuine signatures per user (this is the setup from [1] - refer to 
-the paper for more details). For knowing all command-line options, run ```python -m sigver.wd.test -m signet```. 
 
 # Pre-trained models
 

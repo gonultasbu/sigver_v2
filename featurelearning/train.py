@@ -13,9 +13,9 @@ from torch.utils.data import TensorDataset, random_split, DataLoader
 from torchvision import transforms
 from visdom_logger.logger import VisdomLogger
 
-import sigver.datasets.util as util
-from sigver.featurelearning.data import TransformDataset
-import sigver.featurelearning.models as models
+import datasets.util as util
+from featurelearning.data import TransformDataset
+import featurelearning.models as models
 
 
 def train(base_model: torch.nn.Module,
@@ -29,7 +29,6 @@ def train(base_model: torch.nn.Module,
           logdir: Optional[pathlib.Path]):
     """ Trains a network using either SigNet or SigNet-F loss functions on
     https://arxiv.org/abs/1705.05787 (e.q. (1) and (4) on the paper)
-
     Parameters
     ----------
     base_model: torch.nn.Module
@@ -52,12 +51,10 @@ def train(base_model: torch.nn.Module,
         Extra arguments for training: epochs, lr, lr_decay, lr_decay_times, momentum, weight_decay
     logdir: str
         Where to save the model and training curves
-
     Returns
     -------
     Dict (str -> tensors)
         The trained weights
-
     """
 
     # Collect all parameters that need to be optimizer
@@ -138,7 +135,6 @@ def train_epoch(train_loader: torch.utils.data.DataLoader,
                 device: torch.device,
                 args: Any):
     """ Trains the network for one epoch
-
         Parameters
         ----------
         train_loader: torch.utils.data.DataLoader
@@ -167,7 +163,6 @@ def train_epoch(train_loader: torch.utils.data.DataLoader,
                 Whether forgeries are being used for training
             args.lamb: float
                 The weight used for the forgery loss (training with forgeries only)
-
         Returns
         -------
         None
@@ -185,15 +180,26 @@ def train_epoch(train_loader: torch.utils.data.DataLoader,
         features = base_model(x)
 
         if args.forg:
-            # Eq (4) in https://arxiv.org/abs/1705.05787
-            logits = classification_layer(features[yforg == 0])
-            class_loss = F.cross_entropy(logits, y[yforg == 0])
+            if args.loss_type == 'L1':
+                # Eq (3) in https://arxiv.org/abs/1705.05787
+                logits = classification_layer(features)
+                class_loss = F.cross_entropy(logits, y)
 
-            forg_logits = forg_layer(features).squeeze()
-            forg_loss = F.binary_cross_entropy_with_logits(forg_logits, yforg)
+                forg_logits = forg_layer(features).squeeze()
+                forg_loss = F.binary_cross_entropy_with_logits(forg_logits, yforg)
 
-            loss = (1 - args.lamb) * class_loss
-            loss += args.lamb * forg_loss
+                loss = (1 - args.lamb) * class_loss
+                loss += args.lamb * forg_loss
+            else: 
+                # Eq (4) in https://arxiv.org/abs/1705.05787
+                logits = classification_layer(features[yforg == 0])
+                class_loss = F.cross_entropy(logits, y[yforg == 0])
+
+                forg_logits = forg_layer(features).squeeze()
+                forg_loss = F.binary_cross_entropy_with_logits(forg_logits, yforg)
+
+                loss = (1 - args.lamb) * class_loss
+                loss += args.lamb * forg_loss
         else:
             # Eq (1) in https://arxiv.org/abs/1705.05787
             logits = classification_layer(features)
@@ -213,7 +219,8 @@ def train_epoch(train_loader: torch.utils.data.DataLoader,
             callback.scalar('class_loss', iteration, class_loss.detach())
 
             pred = logits.argmax(1)
-            acc = y[yforg == 0].eq(pred).float().mean()
+            if args.loss_type == 'L1': acc = y.eq(pred).float().mean()
+            else: acc = y[yforg == 0].eq(pred[yforg == 0]).float().mean()
             callback.scalar('train_acc', epoch + (step / n_steps), acc.detach())
             if args.forg:
                 forg_pred = forg_logits > 0
@@ -232,7 +239,6 @@ def test(val_loader: torch.utils.data.DataLoader,
          is_forg: bool,
          forg_layer: Optional[torch.nn.Module] = None) -> Tuple[float, float, float, float]:
     """ Test the model in a validation/test set
-
     Parameters
     ----------
     val_loader: torch.utils.data.DataLoader
@@ -249,12 +255,10 @@ def test(val_loader: torch.utils.data.DataLoader,
     forg_layer: torch.nn.Module
             The forgery prediction layer (from features to predictions of whether
             the signature is a forgery). Only used in is_forg = True
-
     Returns
     -------
     float, float
         The valication accuracy and validation loss
-
     """
     val_losses = []
     val_accs = []
@@ -281,17 +285,18 @@ def test(val_loader: torch.utils.data.DataLoader,
                 forg_pred = forg_logits > 0
                 forg_acc = yforg.long().eq(forg_pred.long()).float().mean()
 
-                val_forg_losses.append(forg_loss)
-                val_forg_accs.append(forg_acc)
+                val_forg_losses.append(forg_loss.item())
+                val_forg_accs.append(forg_acc.item())
 
         val_losses.append(loss.item())
         val_accs.append(acc.item())
     val_loss = np.mean(val_losses)
     val_acc = np.mean(val_accs)
-    val_forg_loss = np.mean(val_forg_losses).item() if len(val_forg_losses) > 0 else np.nan
-    val_forg_acc= np.mean(val_forg_accs).item() if len(val_forg_accs) > 0 else np.nan
+    val_forg_loss = np.mean(val_forg_losses) if len(val_forg_losses) > 0 else np.nan
+    val_forg_acc= np.mean(val_forg_accs) if len(val_forg_accs) > 0 else np.nan
 
-    return val_acc.item(), val_loss.item(), val_forg_acc, val_forg_loss
+    if is_forg: return val_acc.item(), val_loss.item(), val_forg_acc.item(), val_forg_loss.item()
+    else : return val_acc.item(), val_loss.item(), val_forg_acc, val_forg_loss
 
 
 def main(args):
@@ -403,6 +408,7 @@ if __name__ == '__main__':
     argparser.add_argument('--forg', dest='forg', action='store_true')
     argparser.add_argument('--lamb', type=float, help='Lambda for trading of user classification '
                                                       'and forgery classification')
+    argparser.add_argument('--loss-type', help='L1 or L2 loss, implemented on paper Eq(3) or Eq(4)', default='L2', type=str)
 
     argparser.add_argument('--gpu-idx', default=0, type=int)
     argparser.add_argument('--logdir', help='logdir', required=True)

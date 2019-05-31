@@ -1,5 +1,5 @@
 import os
-from sigver.datasets.base import IterableDataset
+from datasets.base import IterableDataset
 from skimage.io import imread
 from skimage import img_as_ubyte
 

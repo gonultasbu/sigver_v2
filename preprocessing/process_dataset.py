@@ -3,11 +3,11 @@ import functools
 from typing import Tuple
 import numpy as np
 
-from sigver.datasets import available_datasets
-from sigver.datasets.base import IterableDataset
-from sigver.datasets.util import process_dataset_images
+from datasets import available_datasets
+from datasets.base import IterableDataset
+from datasets.util import process_dataset_images
 
-from sigver.preprocessing.normalize import preprocess_signature
+from preprocessing.normalize import preprocess_signature
 
 
 def process_dataset(dataset: IterableDataset,
