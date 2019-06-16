@@ -13,3 +13,5 @@ saved_models/gpds4k_net.zip
 npz/
 featurelearning/__pycache__/
 wd/versions/
+*.pyc
+*.pickle
