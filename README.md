@@ -1,3 +1,4 @@
+
 # Offline Handwritten Signature Verification Using Machine Learning
 
 This repository is a spinoff from https://github.com/luizgh/sigver with some architectural tweaks and domain adaptations.
@@ -90,3 +91,12 @@ If you use the code, please consider citing the following papers:
 # License
 
 The source code is released under the BSD 3-clause license. Note that the trained models used the GPDS dataset for training, which is restricted for non-commercial use.  
+
+# TODO
+
+Generate fake signatures using GANs.  
+Robustness against Gaussian noise (Generality).  
+
+
+
+
